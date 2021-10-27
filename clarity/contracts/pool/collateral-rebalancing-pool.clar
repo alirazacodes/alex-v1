@@ -32,6 +32,7 @@
 (define-constant ERR-GET-BALANCE-FAIL (err u6001))
 (define-constant ERR-NOT-AUTHORIZED (err u1000))
 (define-constant ERR-LTV-GREATER-THAN-ONE (err u2019))
+(define-constant ERR-EXCEEDS-MAX-SLIPPAGE (err u2020))
 
 
 (define-constant a1 u27839300)
@@ -39,7 +40,6 @@
 (define-constant a3 u97200)
 (define-constant a4 u7810800)
 
-;; TODO: need to be defined properly
 (define-data-var contract-owner principal tx-sender)
 (define-data-var oracle-src (string-ascii 32) "coingecko")
 ;; data maps and vars
@@ -96,17 +96,17 @@
     (let
         (
             (a1x (mul-down a1 x))
-            (x2 (unwrap! (pow-down x u200000000) ERR-MATH-CALL))
+            (x2 (pow-down x u200000000))
             (a2x (mul-down a2 x2))
-            (x3 (unwrap! (pow-down x u300000000) ERR-MATH-CALL))
+            (x3 (pow-down x u300000000))
             (a3x (mul-down a3 x3))
-            (x4 (unwrap! (pow-down x u400000000) ERR-MATH-CALL))
+            (x4 (pow-down x u400000000))
             (a4x (mul-down a4 x4))
             (denom (+ ONE_8 a1x))
             (denom1 (+ denom a2x))
             (denom2 (+ denom1 a3x))
             (denom3 (+ denom2 a4x))
-            (denom4 (unwrap! (pow-down denom3 u400000000) ERR-MATH-CALL))
+            (denom4 (pow-down denom3 u400000000))
             (base (div-down ONE_8 denom4))
         )
         (if (<= ONE_8 base) (ok u0) (ok (- ONE_8 base)))
@@ -250,11 +250,10 @@
 
                     ;; we calculate d1 first
                     (spot-term (div-up spot strike))
-                    (pow-bs-vol (div-up 
-                                    (unwrap! (pow-down bs-vol u200000000) ERR-MATH-CALL) u200000000))
+                    (pow-bs-vol (div-up (pow-down bs-vol u200000000) u200000000))
                     (vol-term (mul-up t pow-bs-vol))
-                    (sqrt-t (unwrap! (pow-down t u50000000) ERR-MATH-CALL))
-                    (sqrt-2 (unwrap! (pow-down u200000000 u50000000) ERR-MATH-CALL))
+                    (sqrt-t (pow-down t u50000000))
+                    (sqrt-2 (pow-down u200000000 u50000000))
             
                     (denominator (mul-down bs-vol sqrt-t))
                     (numerator (+ vol-term (- (if (> spot-term ONE_8) spot-term ONE_8) (if (> spot-term ONE_8) ONE_8 spot-term))))
@@ -300,10 +299,9 @@
 
                 ;; we calculate d1 first
                 ;; because we support 'at-the-money' only, we can simplify formula
-                (sqrt-t (unwrap! (pow-down t u50000000) ERR-MATH-CALL))
-                (sqrt-2 (unwrap! (pow-down u200000000 u50000000) ERR-MATH-CALL))            
-                (pow-bs-vol (div-up 
-                                (unwrap! (pow-down bs-vol u200000000) ERR-MATH-CALL) u200000000))
+                (sqrt-t (pow-down t u50000000))
+                (sqrt-2 (pow-down u200000000 u50000000))
+                (pow-bs-vol (div-up (pow-down bs-vol u200000000) u200000000))
                 (numerator (mul-up t pow-bs-vol))
                 (denominator (mul-down bs-vol sqrt-t))        
                 (d1 (div-up numerator denominator))
@@ -355,7 +353,7 @@
         (
             (minted-yield-token (get yield-token (try! (add-to-position token collateral the-yield-token the-key-token dx))))
         )
-        (contract-call? .yield-token-pool swap-y-for-x the-yield-token token minted-yield-token)
+        (contract-call? .yield-token-pool swap-y-for-x the-yield-token token minted-yield-token none)
     )
 )
 
@@ -392,8 +390,8 @@
                 (dy-weighted (if (is-eq token-x token-y)
                                 dx-to-dy
                                 (if (is-some (contract-call? .fixed-weight-pool get-pool-exists token collateral u50000000 u50000000))
-                                    (get dx (try! (contract-call? .fixed-weight-pool swap-y-for-x token collateral u50000000 u50000000 dx-to-dy)))
-                                    (get dy (try! (contract-call? .fixed-weight-pool swap-x-for-y collateral token u50000000 u50000000 dx-to-dy)))
+                                    (get dx (try! (contract-call? .fixed-weight-pool swap-y-for-x token collateral u50000000 u50000000 dx-to-dy none)))
+                                    (get dy (try! (contract-call? .fixed-weight-pool swap-x-for-y collateral token u50000000 u50000000 dx-to-dy none)))
                                 )                                 
                              )
                 )
@@ -446,8 +444,8 @@
                                     (begin
                                         (as-contract (try! (contract-call? .alex-vault transfer-ft collateral balance-x tx-sender tx-sender)))
                                         (if (is-some (contract-call? .fixed-weight-pool get-pool-exists collateral token u50000000 u50000000))
-                                            (get dy (as-contract (try! (contract-call? .fixed-weight-pool swap-x-for-y collateral token u50000000 u50000000 balance-x))))
-                                            (get dx (as-contract (try! (contract-call? .fixed-weight-pool swap-y-for-x token collateral u50000000 u50000000 balance-x))))
+                                            (get dy (as-contract (try! (contract-call? .fixed-weight-pool swap-x-for-y collateral token u50000000 u50000000 balance-x none))))
+                                            (get dx (as-contract (try! (contract-call? .fixed-weight-pool swap-y-for-x token collateral u50000000 u50000000 balance-x none))))
                                         )                                                                                
                                     )                                    
                                 )
@@ -497,8 +495,8 @@
                             (as-contract (unwrap! (contract-call? token transfer (if (is-eq token-y .token-usda)
                                                                         amount-to-swap
                                                                         (if (is-some (contract-call? .fixed-weight-pool get-pool-exists token .token-usda u50000000 u50000000))
-                                                                            (get dx (try! (contract-call? .fixed-weight-pool swap-y-for-x token .token-usda u50000000 u50000000 amount-to-swap)))
-                                                                            (get dy (try! (contract-call? .fixed-weight-pool swap-x-for-y .token-usda token u50000000 u50000000 amount-to-swap)))
+                                                                            (get dx (try! (contract-call? .fixed-weight-pool swap-y-for-x token .token-usda u50000000 u50000000 amount-to-swap none)))
+                                                                            (get dy (try! (contract-call? .fixed-weight-pool swap-x-for-y .token-usda token u50000000 u50000000 amount-to-swap none)))
                                                                         )                                                                        
                                                                     ) tx-sender .alex-vault none) ERR-TRANSFER-Y-FAILED))
                         )
@@ -558,10 +556,8 @@
 )
 
 ;; split of balance to yield and key is transparent to traders
-(define-public (swap-x-for-y (token <ft-trait>) (collateral <ft-trait>) (expiry uint) (dx uint))
+(define-public (swap-x-for-y (token <ft-trait>) (collateral <ft-trait>) (expiry uint) (dx uint) (min-dy (optional uint)))
     (begin
-        ;; TODO : Check whether dy or dx value is valid  
-        ;; (asserts! (< min-dy dy) too-much-slippage-err)
         (asserts! (> dx u0) ERR-INVALID-LIQUIDITY) 
         ;; (asserts! (<= (* block-height ONE_8) expiry) ERR-EXPIRY)    
         
@@ -600,6 +596,8 @@
                 )
             )
 
+            (asserts! (< (default-to u0 min-dy) dy) ERR-EXCEEDS-MAX-SLIPPAGE)
+
             (unwrap! (contract-call? collateral transfer dx tx-sender .alex-vault none) ERR-TRANSFER-X-FAILED)
             (try! (contract-call? .alex-vault transfer-ft token dy (as-contract tx-sender) tx-sender))
 
@@ -611,10 +609,9 @@
     )
 )
 
-(define-public (swap-y-for-x (token <ft-trait>) (collateral <ft-trait>) (expiry uint) (dy uint))
+;; split of balance to yield and key is transparent to traders
+(define-public (swap-y-for-x (token <ft-trait>) (collateral <ft-trait>) (expiry uint) (dy uint) (min-dx (optional uint)))
     (begin
-        ;; TODO : Check whether dy or dx value is valid  
-        ;; (asserts! (< min-dy dy) too-much-slippage-err)
         (asserts! (> dy u0) ERR-INVALID-LIQUIDITY)    
         ;; (asserts! (<= (* block-height ONE_8) expiry) ERR-EXPIRY)   
         ;; swap is supported only if token /= collateral
@@ -652,6 +649,8 @@
                 )
             )
 
+            (asserts! (< (default-to u0 min-dx) dx) ERR-EXCEEDS-MAX-SLIPPAGE)
+
             (try! (contract-call? .alex-vault transfer-ft collateral dx (as-contract tx-sender) tx-sender))
             (unwrap! (contract-call? token transfer dy tx-sender .alex-vault none) ERR-TRANSFER-Y-FAILED)
 
@@ -663,40 +662,24 @@
     )
 )
 
-(define-read-only (get-fee-rate-x (token <ft-trait>) (collateral <ft-trait>) (expiry uint))
-    (let 
-        (
-            (token-x (contract-of collateral))
-            (token-y (contract-of token))            
-            (pool (unwrap! (map-get? pools-data-map { token-x: token-x, token-y: token-y, expiry: expiry }) ERR-INVALID-POOL-ERR))
-        )
-        (ok (get fee-rate-x pool))
-    )
+(define-read-only (get-fee-rate-x (token <ft-trait>) (collateral <ft-trait>) (expiry uint)) 
+   (ok (get fee-rate-x (try! (get-pool-details token collateral expiry))))  
 )
 
-(define-read-only (get-fee-rate-y (token <ft-trait>) (collateral <ft-trait>) (expiry uint))
-    (let 
-        (
-            (token-x (contract-of collateral))
-            (token-y (contract-of token))            
-            (pool (unwrap! (map-get? pools-data-map { token-x: token-x, token-y: token-y, expiry: expiry }) ERR-INVALID-POOL-ERR))
-        )
-        (ok (get fee-rate-y pool))
-    )
+(define-read-only (get-fee-rate-y (token <ft-trait>) (collateral <ft-trait>) (expiry uint)) 
+   (ok (get fee-rate-y (try! (get-pool-details token collateral expiry))))  
 )
 
 (define-public (set-fee-rate-x (token <ft-trait>) (collateral <ft-trait>) (expiry uint) (fee-rate-x uint))
     (let 
         (
-            (token-x (contract-of collateral))
-            (token-y (contract-of token))            
-            (pool (unwrap! (map-get? pools-data-map { token-x: token-x, token-y: token-y, expiry: expiry }) ERR-INVALID-POOL-ERR))
+            (pool (try! (get-pool-details token collateral expiry)))
         )
         (asserts! (is-eq contract-caller (get fee-to-address pool)) ERR-NOT-AUTHORIZED)
 
         (map-set pools-data-map 
             { 
-                token-x: token-x, token-y: token-y, expiry: expiry 
+                token-x: (contract-of collateral), token-y: (contract-of token), expiry: expiry 
             }
             (merge pool { fee-rate-x: fee-rate-x })
         )
@@ -706,16 +689,14 @@
 
 (define-public (set-fee-rate-y (token <ft-trait>) (collateral <ft-trait>) (expiry uint) (fee-rate-y uint))
     (let 
-        (
-            (token-x (contract-of collateral))
-            (token-y (contract-of token))            
-            (pool (unwrap! (map-get? pools-data-map { token-x: token-x, token-y: token-y, expiry: expiry }) ERR-INVALID-POOL-ERR))
+        (         
+            (pool (try! (get-pool-details token collateral expiry)))
         )
         (asserts! (is-eq contract-caller (get fee-to-address pool)) ERR-NOT-AUTHORIZED)
 
         (map-set pools-data-map 
             { 
-                token-x: token-x, token-y: token-y, expiry: expiry
+                token-x: (contract-of collateral), token-y: (contract-of token), expiry: expiry
             }
             (merge pool { fee-rate-y: fee-rate-y })
         )
@@ -767,8 +748,8 @@
                         (if (is-eq token-x .token-usda) 
                             fee-x 
                             (if (is-some (contract-call? .fixed-weight-pool get-pool-exists .token-usda collateral u50000000 u50000000))
-                                (get dx (try! (contract-call? .fixed-weight-pool swap-y-for-x .token-usda collateral u50000000 u50000000 fee-x)))
-                                (get dy (try! (contract-call? .fixed-weight-pool swap-x-for-y collateral .token-usda u50000000 u50000000 fee-x)))
+                                (get dx (try! (contract-call? .fixed-weight-pool swap-y-for-x .token-usda collateral u50000000 u50000000 fee-x none)))
+                                (get dy (try! (contract-call? .fixed-weight-pool swap-x-for-y collateral .token-usda u50000000 u50000000 fee-x none)))
                             )                            
                         )
                     )
@@ -786,8 +767,8 @@
                         (if (is-eq token-y .token-usda) 
                             fee-y 
                             (if (is-some (contract-call? .fixed-weight-pool get-pool-exists .token-usda token u50000000 u50000000))
-                                (get dx (try! (contract-call? .fixed-weight-pool swap-y-for-x .token-usda token u50000000 u50000000 fee-y)))
-                                (get dy (try! (contract-call? .fixed-weight-pool swap-x-for-y token .token-usda u50000000 u50000000 fee-y)))
+                                (get dx (try! (contract-call? .fixed-weight-pool swap-y-for-x .token-usda token u50000000 u50000000 fee-y none)))
+                                (get dy (try! (contract-call? .fixed-weight-pool swap-x-for-y token .token-usda u50000000 u50000000 fee-y none)))
                             )                            
                         )
                     )
@@ -961,7 +942,7 @@
 
 ;; math-fixed-point
 ;; Fixed Point Math
-;; following https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/solidity-utils/contracts/math/FixedPoint.sol
+;; following https://github.com/balancer-labs/balancer-monorepo/blob/master/pkg/solidity-utils/contracts/math/FixedPoint.sol
 
 ;; TODO: overflow causes runtime error, should handle before operation rather than after
 
@@ -1033,8 +1014,8 @@
             (max-error (+ u1 (mul-up raw MAX_POW_RELATIVE_ERROR)))
         )
         (if (< raw max-error)
-            (ok u0)
-            (ok (- raw max-error))
+            u0
+            (- raw max-error)
         )
     )
 )
@@ -1053,7 +1034,7 @@
 ;; Exponentiation and logarithm functions for 8 decimal fixed point numbers (both base and exponent/argument).
 ;; Exponentiation and logarithm with arbitrary bases (x^y and log_x(y)) are implemented by conversion to natural 
 ;; exponentiation and logarithm (where the base is Euler's number).
-;; Reference: https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/solidity-utils/contracts/math/LogExpMath.sol
+;; Reference: https://github.com/balancer-labs/balancer-monorepo/blob/master/pkg/solidity-utils/contracts/math/LogExpMath.sol
 ;; MODIFIED: because we use only 128 bits instead of 256, we cannot do 20 decimal or 36 decimal accuracy like in Balancer. 
 
 ;; constants

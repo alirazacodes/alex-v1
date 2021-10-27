@@ -34,7 +34,7 @@
 (define-read-only (get-price (balance-x uint) (balance-y uint) (t uint))
   (begin
     (asserts! (>= balance-y balance-x) invalid-balance-err)      
-    (ok (unwrap-panic (pow-up (div-down balance-y balance-x) t)))
+    (ok (pow-up (div-down balance-y balance-x) t))
   )
 )
 
@@ -66,12 +66,12 @@
         (t-comp-num-uncapped (div-down ONE_8 t-comp))
         (bound (unwrap-panic (get-exp-bound)))
         (t-comp-num (if (< t-comp-num-uncapped bound) t-comp-num-uncapped bound))            
-        (x-pow (unwrap-panic (pow-down balance-x t-comp)))
-        (y-pow (unwrap-panic (pow-down balance-y t-comp)))
-        (x-dx-pow (unwrap-panic (pow-down (+ balance-x dx) t-comp)))
+        (x-pow (pow-down balance-x t-comp))
+        (y-pow (pow-down balance-y t-comp))
+        (x-dx-pow (pow-down (+ balance-x dx) t-comp))
         (add-term (+ x-pow y-pow))
         (term (if (<= add-term x-dx-pow) u0 (- add-term x-dx-pow)))
-        (final-term (unwrap-panic (pow-down term t-comp-num)))
+        (final-term (pow-down term t-comp-num))
         (dy (if (<= balance-y final-term) u0 (- balance-y final-term)))
       )
       
@@ -97,12 +97,12 @@
         (t-comp-num-uncapped (div-down ONE_8 t-comp))
         (bound (unwrap-panic (get-exp-bound)))
         (t-comp-num (if (< t-comp-num-uncapped bound) t-comp-num-uncapped bound))            
-        (x-pow (unwrap-panic (pow-down balance-x t-comp)))
-        (y-pow (unwrap-panic (pow-down balance-y t-comp)))
-        (y-dy-pow (unwrap-panic (pow-up (if (<= balance-y dy) u0 (- balance-y dy)) t-comp)))
+        (x-pow (pow-down balance-x t-comp))
+        (y-pow (pow-down balance-y t-comp))
+        (y-dy-pow (pow-up (if (<= balance-y dy) u0 (- balance-y dy)) t-comp))
         (add-term (+ x-pow y-pow))
         (term (if (<= add-term y-dy-pow) u0 (- add-term y-dy-pow)))
-        (final-term (unwrap-panic (pow-down term t-comp-num)))         
+        (final-term (pow-down term t-comp-num))
         (dx (if (<= final-term balance-x) u0 (- final-term balance-x)))
       )
 
@@ -129,9 +129,9 @@
         (bound (unwrap-panic (get-exp-bound)))
         (t-comp-num (if (< t-comp-num-uncapped bound) t-comp-num-uncapped bound))            
         (max-exp (unwrap-panic (get-exp-bound)))
-        (numer (+ ONE_8 (unwrap-panic (pow-down (div-down balance-y balance-x) t-comp))))
-        (denom (+ ONE_8 (unwrap-panic (pow-down price (div-down t-comp t)))))
-        (lead-term (unwrap-panic (pow-down (div-down numer denom) t-comp-num)))
+        (numer (+ ONE_8 (pow-down (div-down balance-y balance-x) t-comp)))
+        (denom (+ ONE_8 (pow-down price (div-down t-comp t))))
+        (lead-term (pow-down (div-down numer denom) t-comp-num))
       )
       (if (<= lead-term ONE_8) (ok u0) (ok (mul-up balance-x (- lead-term ONE_8))))
     )
@@ -155,9 +155,9 @@
         (bound (unwrap-panic (get-exp-bound)))
         (t-comp-num (if (< t-comp-num-uncapped bound) t-comp-num-uncapped bound))            
         (max-exp (unwrap-panic (get-exp-bound)))
-        (numer (+ ONE_8 (unwrap-panic (pow-down (div-down balance-y balance-x) t-comp))))
-        (denom (+ ONE_8 (unwrap-panic (pow-down price (div-down t-comp t)))))
-        (lead-term (mul-up balance-x (unwrap-panic (pow-down (div-down numer denom) t-comp-num))))
+        (numer (+ ONE_8 (pow-down (div-down balance-y balance-x) t-comp)))
+        (denom (+ ONE_8 (pow-down price (div-down t-comp t))))
+        (lead-term (mul-up balance-x (pow-down (div-down numer denom) t-comp-num)))
       )
       (if (<= balance-y lead-term) (ok u0) (ok (- balance-y lead-term)))
     )
@@ -213,7 +213,7 @@
 
 ;; math-fixed-point
 ;; Fixed Point Math
-;; following https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/solidity-utils/contracts/math/FixedPoint.sol
+;; following https://github.com/balancer-labs/balancer-monorepo/blob/master/pkg/solidity-utils/contracts/math/FixedPoint.sol
 
 ;; TODO: overflow causes runtime error, should handle before operation rather than after
 
@@ -285,8 +285,8 @@
             (max-error (+ u1 (mul-up raw MAX_POW_RELATIVE_ERROR)))
         )
         (if (< raw max-error)
-            (ok u0)
-            (ok (- raw max-error))
+          u0
+          (- raw max-error)
         )
     )
 )
@@ -297,7 +297,7 @@
             (raw (unwrap-panic (pow-fixed a b)))
             (max-error (+ u1 (mul-up raw MAX_POW_RELATIVE_ERROR)))
         )
-        (ok (+ raw max-error))
+        (+ raw max-error)
     )
 )
 
@@ -305,7 +305,7 @@
 ;; Exponentiation and logarithm functions for 8 decimal fixed point numbers (both base and exponent/argument).
 ;; Exponentiation and logarithm with arbitrary bases (x^y and log_x(y)) are implemented by conversion to natural 
 ;; exponentiation and logarithm (where the base is Euler's number).
-;; Reference: https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/solidity-utils/contracts/math/LogExpMath.sol
+;; Reference: https://github.com/balancer-labs/balancer-monorepo/blob/master/pkg/solidity-utils/contracts/math/LogExpMath.sol
 ;; MODIFIED: because we use only 128 bits instead of 256, we cannot do 20 decimal or 36 decimal accuracy like in Balancer. 
 
 ;; constants

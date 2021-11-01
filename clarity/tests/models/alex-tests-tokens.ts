@@ -16,6 +16,14 @@ class USDAToken {
     this.deployer = deployer;
   }
 
+  // Always need to called by deployer
+  mint(recipient: string, amount : number) {
+    return this.chain.callReadOnlyFn("token-usda", "mint", [
+      types.principal(recipient),
+      types.uint(amount),
+    ], this.deployer.address);
+  }
+
   balanceOf(wallet: string) {
     return this.chain.callReadOnlyFn("token-usda", "get-balance", [
       types.principal(wallet),
@@ -50,6 +58,14 @@ class WBTCToken {
     this.chain = chain;
     this.deployer = deployer;
   }
+
+    // Always need to called by deployer
+    mint(recipient: string, amount : number) {
+      return this.chain.callReadOnlyFn("token-wbtc", "mint", [
+        types.principal(recipient),
+        types.uint(amount),
+      ], this.deployer.address);
+    }
 
   balanceOf(wallet: string) {
     return this.chain.callReadOnlyFn("token-wbtc", "get-balance", [
@@ -86,6 +102,14 @@ class POOLTOKEN_FWP_WBTC_USDA_5050 {
     this.deployer = deployer;
   }
 
+    // Always need to called by deployer
+    mint(recipient: string, amount : number) {
+      return this.chain.callReadOnlyFn("fwp-wbtc-usda-50-50", "mint", [
+        types.principal(recipient),
+        types.uint(amount),
+      ], this.deployer.address);
+    }
+
   balanceOf(wallet: string) {
     return this.chain.callReadOnlyFn("fwp-wbtc-usda-50-50", "get-balance", [
       types.principal(wallet),
@@ -106,6 +130,14 @@ class POOLTOKEN_YTP_WBTC_WBTC_59760 {
     this.chain = chain;
     this.deployer = deployer;
   }
+
+      // Always need to called by deployer
+    mint(recipient: string, amount : number) {
+      return this.chain.callReadOnlyFn("ytp-yield-wbtc-59760-wbtc", "mint", [
+        types.principal(recipient),
+        types.uint(amount),
+      ], this.deployer.address);
+    }
 
   balanceOf(wallet: string) {
     return this.chain.callReadOnlyFn("ytp-yield-wbtc-59760-wbtc", "get-balance", [
@@ -128,6 +160,14 @@ class YIELD_WBTC_59760 {
     this.deployer = deployer;
   }
 
+    // Always need to called by deployer
+    mint(recipient: string, amount : number) {
+      return this.chain.callReadOnlyFn("yield-wbtc-59760", "mint", [
+        types.principal(recipient),
+        types.uint(amount),
+      ], this.deployer.address);
+    }
+
   balanceOf(wallet: string) {
     return this.chain.callReadOnlyFn("yield-wbtc-59760", "get-balance", [
       types.principal(wallet),
@@ -149,6 +189,14 @@ class KEY_WBTC_59760_USDA {
     this.chain = chain;
     this.deployer = deployer;
   }
+
+    // Always need to called by deployer
+    mint(recipient: string, amount : number) {
+      return this.chain.callReadOnlyFn("key-wbtc-59760-usda", "mint", [
+        types.principal(recipient),
+        types.uint(amount),
+      ], this.deployer.address);
+    }
 
   balanceOf(wallet: string) {
     return this.chain.callReadOnlyFn("key-wbtc-59760-usda", "get-balance", [

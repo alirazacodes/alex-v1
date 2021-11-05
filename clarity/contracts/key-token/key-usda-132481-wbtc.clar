@@ -1,12 +1,12 @@
-(impl-trait .trait-ownable.ownable-trait)
 (impl-trait .trait-yield-token.yield-token-trait) 
+(impl-trait .trait-ownable.ownable-trait)
 
-(define-fungible-token yield-wbtc-59760)
+(define-fungible-token key-usda-132481-wbtc)
 
 (define-data-var token-uri (string-utf8 256) u"")
 (define-data-var contract-owner principal .collateral-rebalancing-pool)
-(define-data-var token-expiry uint u5976000000000)  
-(define-data-var underlying-token principal .token-wbtc)
+(define-data-var token-expiry uint u13248100000000)  
+(define-data-var underlying-token principal .token-usda)
 
 ;; errors
 (define-constant ERR-NOT-AUTHORIZED (err u1000))
@@ -41,23 +41,23 @@
 ;; ---------------------------------------------------------
 
 (define-read-only (get-total-supply)
-  (ok (decimals-to-fixed (ft-get-supply yield-wbtc-59760)))
+  (ok (decimals-to-fixed (ft-get-supply key-usda-132481-wbtc)))
 )
 
 (define-read-only (get-name)
-  (ok "yield-wbtc-59760")
+  (ok "key-usda-132481-wbtc")
 )
 
 (define-read-only (get-symbol)
-  (ok "yield-wbtc-59760")
+  (ok "key-usda-132481-wbtc")
 )
 
 (define-read-only (get-decimals)
-  (ok (unwrap-panic (contract-call? .token-wbtc get-decimals)))
+  (ok (unwrap-panic (contract-call? .token-usda get-decimals)))
 )
 
 (define-read-only (get-balance (account principal))
-  (ok (decimals-to-fixed (ft-get-balance yield-wbtc-59760 account)))
+  (ok (decimals-to-fixed (ft-get-balance key-usda-132481-wbtc account)))
 )
 
 (define-public (set-token-uri (value (string-utf8 256)))
@@ -74,7 +74,7 @@
 (define-public (transfer (amount uint) (sender principal) (recipient principal) (memo (optional (buff 34))))
   (begin
     (asserts! (is-eq sender tx-sender) ERR-NOT-AUTHORIZED)
-    (match (ft-transfer? yield-wbtc-59760 (fixed-to-decimals amount) sender recipient)
+    (match (ft-transfer? key-usda-132481-wbtc (fixed-to-decimals amount) sender recipient)
       response (begin
         (print memo)
         (ok response)
@@ -87,14 +87,14 @@
 (define-public (mint (recipient principal) (amount uint))
   (begin
     (asserts! (is-eq contract-caller (var-get contract-owner)) ERR-NOT-AUTHORIZED)
-    (ft-mint? yield-wbtc-59760 (fixed-to-decimals amount) recipient)
+    (ft-mint? key-usda-132481-wbtc (fixed-to-decimals amount) recipient)
   )
 )
 
 (define-public (burn (sender principal) (amount uint))
   (begin
     (asserts! (is-eq contract-caller (var-get contract-owner)) ERR-NOT-AUTHORIZED)
-    (ft-burn? yield-wbtc-59760 (fixed-to-decimals amount) sender)
+    (ft-burn? key-usda-132481-wbtc (fixed-to-decimals amount) sender)
   )
 )
 
@@ -104,9 +104,4 @@
 
 (define-public (get-expiry)
     (ok (var-get token-expiry))
-)
-
-;; Initialize the contract for Testing.
-(begin
-  (try! (ft-mint? yield-wbtc-59760 u2000000000000 tx-sender))
 )

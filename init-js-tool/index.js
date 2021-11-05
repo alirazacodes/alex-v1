@@ -11,7 +11,7 @@ const {
     flExecuteMarginWbtcUsda34560,
     flExecuteMarginWbtcUsda74880,
 } = require('./flashloan')
-const { flashloan, getBalance, mint, burn, balance } = require('./vault')
+const { flashloan, getBalance, mint, burn, balance, transfer } = require('./vault')
 const { setUsdaAmount, setWbtcAmount, setStxAmount, getSomeTokens } = require('./faucet')
 const {
     fwpCreate,
@@ -130,7 +130,7 @@ const _deploy = {
         collateral_crp: 1500000e+8,
         ltv_0: 0.7e+8,
         bs_vol: 0.8e+8,
-        target_apy: 0.18469,
+        target_apy: 0.09469,
         expiry: 92160e+8,
     },
     5: {token: 'token-usda',
@@ -144,9 +144,37 @@ const _deploy = {
         collateral_crp: 25e+8,
         ltv_0: 0.7e+8,
         bs_vol: 0.8e+8,
-        target_apy: 0.16950,
+        target_apy: 0.10950,
         expiry: 92160e+8,
-    },          
+    },     
+    6: {token: 'token-wbtc',
+        collateral: 'token-usda',
+        yield_token: 'yield-wbtc-132481',
+        key_token: 'key-wbtc-132481-usda',
+        pool_token: 'ytp-yield-wbtc-132481-wbtc',
+        multisig_ytp: 'multisig-ytp-yield-wbtc-132481-wbtc',
+        multisig_crp: 'multisig-crp-wbtc-132481-usda',
+        liquidity_ytp: 100e+8,
+        collateral_crp: 1500000e+8,
+        ltv_0: 0.7e+8,
+        bs_vol: 0.8e+8,
+        target_apy: 0.18469,
+        expiry: 132481e+8,
+    },
+    7: {token: 'token-usda',
+        collateral: 'token-wbtc',
+        yield_token: 'yield-usda-132481',
+        key_token: 'key-usda-132481-wbtc',
+        pool_token: 'ytp-yield-usda-132481-usda',
+        multisig_ytp: 'multisig-ytp-yield-usda-132481-usda',
+        multisig_crp: 'multisig-crp-usda-132481-wbtc',
+        liquidity_ytp: 6000000e+8,
+        collateral_crp: 25e+8,
+        ltv_0: 0.7e+8,
+        bs_vol: 0.8e+8,
+        target_apy: 0.16950,
+        expiry: 132481e+8,
+    },      
 }
 
 const ONE_8 = 100000000
@@ -187,8 +215,8 @@ async function mint_some_usda(recipient) {
 
 async function mint_some_wbtc(recipient) {
     console.log('------ Mint Some WBTC ------');
-    // await mint('token-wbtc', recipient, 5000000000000);
-    await mint('token-wbtc', recipient, Math.round(10000000000 * ONE_8 / 61800));
+    await mint('token-wbtc', recipient, 50000000000);
+    // await mint('token-wbtc', recipient, Math.round(10000000000 * ONE_8 / 61800));
     wbtc_balance = await balance('token-wbtc', recipient);
     console.log('wbtc balance: ', format_number(Number(wbtc_balance.value.value) / ONE_8));
 }
@@ -746,7 +774,7 @@ async function run() {
     //                     8:_deploy[10],
     //                     9:_deploy[11]
     //                 };
-    // const _pools = { 0:_deploy[4], 1:_deploy[5] };
+    // const _pools = { 0:_deploy[6], 1:_deploy[7] };
     const _pools = _deploy;
 
     // await create_fwp(add_only=false);
@@ -782,7 +810,7 @@ async function run() {
     // await see_balance(process.env.DEPLOYER_ACCOUNT_ADDRESS + '.alex-vault');           
     
     // await mint_some_tokens(process.env.USER_ACCOUNT_ADDRESS);
-    // await get_some_token('ST11KFHZRN7ANRRPDK0HJXG243EJBFBAFRB27NPK8');
+    // await get_some_token('ST32AK70FP7VNAD68KVDQF3K8XSFG99WKVEHVAPFA');
     // await burn('token-wbtc', 'STZP1114C4EA044RE54M6G5ZC2NYK9SAHB5QVE1', 9995719169074);
     // await burn('token-usda', 'STZP1114C4EA044RE54M6G5ZC2NYK9SAHB5QVE1', 399709145833000000);    
 
@@ -793,9 +821,20 @@ async function run() {
     // console.log(result);
     // await fwpSwapYforX('token-wbtc', 'token-usda', 0.5e8, 0.5e8, 500000000e8, 0);
     // await arbitrage_fwp(dry_run = false);
-    // await mint_some_wbtc(process.env.USER_ACCOUNT_ADDRESS);    
+    // await mint_some_wbtc('ST32AK70FP7VNAD68KVDQF3K8XSFG99WKVEHVAPFA');    
     // await see_balance(process.env.USER_ACCOUNT_ADDRESS);   
     // result = await ytpGetPositionGivenBurn('yield-wbtc-200335', 625000000000, deployer=true);      
     // console.log(result);
+
+    // result = await balance('key-usda-11520-wbtc', process.env.USER_ACCOUNT_ADDRESS);
+    // console.log(result);
+    // await transfer('key-usda-11520-wbtc', 'STCTK0C1JAFK3JVM95TFV6EB16579WRCEYN10CTQ', 10668690600000);
+
+    // _list = ['fwp-wbtc-usda-50-50', 'ytp-yield-wbtc-92160-wbtc', 'ytp-yield-usda-92160-usda']
+    // for (let i = 0; i < _list.length; i++){
+    //     // result = await balance(_list[i], process.env.DEPLOYER_ACCOUNT_ADDRESS);
+    //     // console.log(result);
+    //     await transfer(_list[i], 'STCTK0C1JAFK3JVM95TFV6EB16579WRCEYN10CTQ', ONE_8, deployer=true);
+    // }
 }
 run();
